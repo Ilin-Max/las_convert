@@ -2,27 +2,28 @@
 import sys
 from time import sleep
 import convert_exel_to_las_for_curve_data, convert_exel_to_las_for_point_data, convert_exel_to_las_for_interval_data
+import las_parser.main
 
 mode = 0
 
 def command_new_mode():
     global mode
-    print("""Select mode:
+    print("""\nSelect mode:
     1 - convert Excel to LAS for curve data
     2 - convert Excel to LAS for interval data
-    3 - convert Excel to LAS for point data\n""")
-    
+    3 - convert Excel to LAS for point data
+    4 - parser LAS-file\n""")
     try:
         mode = int(input("mode: "))
-        if mode not in (1, 2, 3):
-            print("unknown command")
+        if mode not in (1, 2, 3, 4):
+            print("unknown command\n")
             mode = 0  
     except ValueError:
         print("enter number")
-        mode = 0
+
         
 def command_exit():
-    print("Завершение программы.")
+    print("exit programm.")
     sleep(3)
     sys.exit(0)
 
@@ -41,6 +42,11 @@ def mode_point_data():
     convert_exel_to_las_for_point_data.main()
     mode = 0
 
+def mode_parser_lasfile():
+    global mode
+    las_parser.main.main()
+    mode = 0
+
 def main():
     global mode
     while True:
@@ -52,13 +58,8 @@ def main():
             mode_interval_data()
         elif mode == 3: 
             mode_point_data()
+        elif mode == 4:
+            mode_parser_lasfile()
 
 if __name__ == "__main__":
     main()
-        
-
-
-
-
-
-
