@@ -55,7 +55,7 @@ def main():
     print(f"Файл {output_file_path} сохранен\n")
 
 
-if __name__ == "__mane__":
+if __name__ == "__main__":
     main()
 
 
