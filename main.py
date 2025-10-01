@@ -1,64 +1,90 @@
-
 import sys
-from time import sleep
-import convert_exel_to_las_for_curve_data, convert_exel_to_las_for_point_data, convert_exel_to_las_for_interval_data
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,\
+      QWidget, QPushButton, QFileDialog, QLabel, QRadioButton, QGroupBox, QLineEdit
+from funcs_convert import read_exel_file, make_LASFile_for_curve_data, make_LASFile_for_interval_data, make_LASFile_for_point_data
 
-mode = 0
-
-def command_new_mode():
-    global mode
-    print("""Select mode:
-    1 - convert Excel to LAS for curve data
-    2 - convert Excel to LAS for interval data
-    3 - convert Excel to LAS for point data\n""")
-    
-    try:
-        mode = int(input("mode: "))
-        if mode not in (1, 2, 3):
-            print("unknown command")
-            mode = 0  
-    except ValueError:
-        print("enter number")
-        mode = 0
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
         
-def command_exit():
-    print("Завершение программы.")
-    sleep(3)
-    sys.exit(0)
+        self.setWindowTitle("LAS-converter")
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        MainVerticalLayout = QVBoxLayout(central_widget)
+        self.setAcceptDrops(True)
 
-def mode_curve_data():
-    global mode
-    convert_exel_to_las_for_curve_data.main()
-    mode = 0
+        GroupBoxForModes = QGroupBox("Формат входных данных")
+        GorizontalLayoutForRadioButton = QHBoxLayout()
+        self.radio_CurveData = QRadioButton("Данные в виде кривой")
+        self.radio_PointData = QRadioButton("Точечные данные")
+        self.radio_IntervalData = QRadioButton("Данные по интервалам")
+        self.radio_PointData.setChecked(True)
+        GorizontalLayoutForRadioButton.addWidget(self.radio_CurveData)
+        GorizontalLayoutForRadioButton.addWidget(self.radio_PointData)
+        GorizontalLayoutForRadioButton.addWidget(self.radio_IntervalData)
+        GroupBoxForModes.setLayout(GorizontalLayoutForRadioButton)
 
-def mode_interval_data():
-    global mode
-    convert_exel_to_las_for_interval_data.main()
-    mode = 0
+        GroupBoxForSelectFile = QGroupBox("Выбор файла")
+        VerticalLayoutForSelectFileWidget = QVBoxLayout()
+        self.btn_FileSelection = QPushButton('Выбрать файл')
+        self.lbl_SelectedFile = QLabel("Файл не выбран")                                          
+        VerticalLayoutForSelectFileWidget.addWidget(self.btn_FileSelection)
+        VerticalLayoutForSelectFileWidget.addWidget(self.lbl_SelectedFile)
+        GroupBoxForSelectFile.setLayout(VerticalLayoutForSelectFileWidget)
 
-def mode_point_data():
-    global mode
-    convert_exel_to_las_for_point_data.main()
-    mode = 0
+        GroupBoxForConvertFile = QGroupBox("Преобразование")
+        VerticalLayoutForConvertFileWidget = QVBoxLayout()
+        GorizontalLayoutForEnterStepDiskret = QHBoxLayout()
+        self.ent_Step_diskret = QLineEdit("0.1524")
+        self.btn_FileConvert = QPushButton('Конвектировать файл')
+        self.lbl_SavedFile = QLabel("")
+        VerticalLayoutForConvertFileWidget.addWidget(self.ent_Step_diskret)
+        VerticalLayoutForConvertFileWidget.addWidget(self.btn_FileConvert)
+        VerticalLayoutForConvertFileWidget.addWidget(self.lbl_SavedFile)
+        GroupBoxForConvertFile.setLayout(VerticalLayoutForConvertFileWidget)
 
-def main():
-    global mode
-    while True:
-        if mode == 0:
-            command_new_mode()
-        elif mode == 1: 
-            mode_curve_data()
-        elif mode == 2: 
-            mode_interval_data()
-        elif mode == 3: 
-            mode_point_data()
+        MainVerticalLayout.addWidget(GroupBoxForModes)
+        MainVerticalLayout.addWidget(GroupBoxForSelectFile)
+        MainVerticalLayout.addWidget(GroupBoxForConvertFile)
+
+        self.btn_FileSelection.clicked.connect(self.FileSelection)
+        self.btn_FileConvert.clicked.connect(self.FileConvert)
+        
+
+    def FileSelection(self):
+        fname = QFileDialog.getOpenFileName(self)[0]
+        if fname:
+            self.lbl_SelectedFile.setText(fname)
+
+    def FileConvert(self):
+        fname, _ = QFileDialog.getSaveFileName(
+            self,                         
+            "Сохранить файл",              # Заголовок окна
+            "",                           # Начальная директория (пусто = текущая)
+            "LAS Files (*.las);;All Files (*)"  # Фильтры расширений
+        )
+        if fname:
+            try:
+                df = read_exel_file(self.lbl_SelectedFile.text())
+                
+                if self.radio_CurveData.isChecked():
+                    las = make_LASFile_for_curve_data(df)
+                elif self.radio_PointData.isChecked():
+                    las = make_LASFile_for_point_data(df)
+                elif self.radio_IntervalData.isChecked():
+                    las = make_LASFile_for_interval_data(df)
+                
+                las.write(fname)
+                self.lbl_SavedFile.setText(f"Файл сохранен как: {fname}")
+            except:
+                print("Error")
+
+def application():
+    app = QApplication(sys.argv)
+    window = MainWindow()
+
+    window.show()
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    main()
-        
-
-
-
-
-
-
+    application()
